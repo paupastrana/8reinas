@@ -16,7 +16,7 @@
 
     <div id="root"></div>
 
-    <!-- Aquí va toda tu app React -->
+
     <script type="text/babel">
       const { useState, useEffect } = React;
 
@@ -111,7 +111,7 @@
               }
               return prev + 1;
             });
-          }, 500); // 500 ms por paso
+          }, 500);
 
           return () => clearInterval(id);
         }, [isPlaying, steps.length]);

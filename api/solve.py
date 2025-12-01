@@ -4,9 +4,6 @@ from typing import List, Dict, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-# -----------------------------------------------------
-#    ALGORITMO N-REINAS (GENERALIZADO A N, CON PASOS)
-# -----------------------------------------------------
 
 def diagonal_libre(tablero, fila, col, n):
     # diagonal arriba izquierda
@@ -56,18 +53,17 @@ def valido(tablero, x, y, n):
     return True
 
 
-def snapshot(tablero, row: Optional[int], col: Optional[int], action: str) -> Dict:
+def snapshot(tablero, row, col, action):
     # copia del tablero para no modificar pasos anteriores
     return {
         "board": [fila[:] for fila in tablero],
         "row": row,
         "col": col,
-        "action": action  # "place", "remove" o "solution"
+        "action": action  #place, remove o solution
     }
 
 
-def resolver_n_reinas(tablero, fila, n, steps) -> bool:
-    # caso base: solución completa
+def resolver_n_reinas(tablero, fila, n, steps) :
     if fila == n:
         steps.append(snapshot(tablero, None, None, "solution"))
         return True  # solo una solución
@@ -94,10 +90,6 @@ def solve_n_reinas(n: int):
     resolver_n_reinas(tablero, 0, n, steps)
     return steps
 
-
-# ---------------------------------------
-#   FASTAPI (para cumplir con el profe)
-# ---------------------------------------
 
 app = FastAPI()
 
@@ -131,19 +123,23 @@ def solve(req: SolveRequest):
     return SolveResponse(steps=steps)
 
 
-# ------------------------------------------
-#   handler PARA VERCEL (serverless)
-#   Vercel usará ESTA función al desplegar.
-# ------------------------------------------
+
 
 def handler(request):
     try:
-        body = request.get_json()
+        raw_body = request.body or b"{}"
+
+        if isinstance(raw_body, bytes):
+            raw_body = raw_body.decode("utf-8")
+
+        body = json.loads(raw_body or "{}")
+
         n = int(body.get("n", 8))
 
         if n < 4 or n > 12:
             return {
                 "statusCode": 400,
+                "headers": {"Content-Type": "application/json"},
                 "body": json.dumps({"detail": "N debe estar entre 4 y 12."})
             }
 
@@ -154,8 +150,12 @@ def handler(request):
             "headers": {"Content-Type": "application/json"},
             "body": json.dumps({"steps": steps})
         }
+
     except Exception as e:
+        print("Error en handler /api/solve:", repr(e))
+
         return {
             "statusCode": 500,
-            "body": json.dumps({"detail": str(e)})
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"detail": "Error interno en el servidor"})
         }
