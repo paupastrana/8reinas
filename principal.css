@@ -1,52 +1,126 @@
+
 body {
-  font-family: sans-serif;
-  padding: 20px;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f4f4f9;
+    padding: 20px;
 }
 
-h1 {
-  margin-bottom: 16px;
+header {
+    text-align: center;
+    margin-bottom: 20px;
 }
 
-.controls,
-.step-controls {
-  margin-bottom: 12px;
+/* --- Paneles de Control y Estado --- */
+
+.controls-panel, .status-panel {
+    background-color: #ffffff;
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
 }
 
-.controls input {
-  width: 60px;
-  margin-left: 4px;
-  margin-right: 8px;
+.controls-panel label {
+    font-weight: bold;
 }
 
-.step-controls button {
-  margin-right: 6px;
+.controls-panel input[type="number"] {
+    width: 60px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 }
 
-.step-info {
-  margin-left: 8px;
+.controls-panel button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
 }
 
-.board {
-  display: grid;
-  gap: 4px;
-  margin-top: 16px;
+#solveButton {
+    background-color: #4CAF50;
+    color: white;
+}
+
+#solveButton:hover:not(:disabled) {
+    background-color: #45a049;
+}
+
+#nextStepButton {
+    background-color: #2196F3;
+    color: white;
+}
+
+#nextStepButton:hover:not(:disabled) {
+    background-color: #1a83e0;
+}
+
+#solveButton:disabled, #nextStepButton:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.status-panel p {
+    margin: 0;
+    font-size: 0.9em;
+}
+
+.status-panel span {
+    font-weight: bold;
+    color: #333;
+}
+
+
+.board-container {
+    display: grid;
+    width: min(80vw, 600px); /* Tamaño máximo del tablero */
+    height: min(80vw, 600px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    border: 3px solid #333;
+    transition: width 0.3s, height 0.3s;
 }
 
 .cell {
-  width: 40px;
-  height: 40px;
-  border: 1px solid #333;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2.5rem; /* Ajustar el tamaño de la reina */
+    cursor: default;
+    transition: background-color 0.1s, transform 0.1s;
 }
 
-.cell.white {
-  background-color: #eee;
+.white {
+    background-color: #f0d9b5; /* Color claro */
 }
 
-.cell.black {
-  background-color: #777;
-  color: white;
+.black {
+    background-color: #b58863; /* Color oscuro */
+}
+
+
+.action-place {
+    background-color: #4CAF50 !important; /* Verde */
+    transform: scale(1.05);
+}
+
+
+.action-remove {
+    background-color: #f44336 !important; /* Rojo */
+    transform: scale(0.95);
+    opacity: 0.8;
+}
+
+footer {
+    margin-top: 30px;
+    font-size: 0.8em;
+    color: #666;
 }

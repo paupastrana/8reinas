@@ -1,167 +1,179 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Solucionador Visual de N-Reinas</title>
-    <link rel="stylesheet" href="principal.css" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N-Reinas: Solucionador Visual de Backtracking</title>
+    <link rel="stylesheet" href="principal.css">
+</head>
+<body>
 
-    <!-- React 18 desde CDN -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-    <!-- Babel para poder usar JSX sin build -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  </head>
-  <body>
-    <h1>Solucionador Visual de N-Reinas (Backtracking)</h1>
+    <header>
+        <h1>👑 Solucionador Visual de N-Reinas 👑</h1>
+        <p>Algoritmo de Backtracking paso a paso.</p>
+    </header>
 
-    <div id="root"></div>
+    <div class="controls-panel">
+        <label for="boardSize">Tamaño del Tablero (N):</label>
+        <input type="number" id="boardSize" value="8" min="4" max="12" onchange="resetBoard()">
+        <button id="solveButton" onclick="handleSolve()">Resolver</button>
+        <button id="nextStepButton" onclick="nextStep()" disabled>Siguiente Paso</button>
+    </div>
 
+    <div class="status-panel">
+        <p>Estado: <span id="statusMessage">Esperando...</span></p>
+        <p>Acción Actual: <span id="currentAction">N/A</span></p>
+    </div>
 
-    <script type="text/babel">
-      const { useState, useEffect } = React;
+    <div id="boardContainer" class="board-container">
+        </div>
 
-      function ChessBoard({ board }) {
-        const n = board.length;
-        const cells = [];
+    <footer>
+        <p>Nota: N restringido entre 4 y 12 para una buena visualización.</p>
+    </footer>
 
-        for (let i = 0; i < n; i++) {
-          for (let j = 0; j < n; j++) {
-            const isWhite = (i + j) % 2 === 0;
-            const classes = "cell " + (isWhite ? "white" : "black");
-            cells.push(
-              <div key={i + "-" + j} className={classes}>
-                {board[i][j] === 1 ? "♛" : ""}
-              </div>
-            );
-          }
+    <script>
+        const API_URL = "http://127.0.0.1:8000/api/solve"; 
+        let animationSteps = [];
+        let currentStepIndex = 0;
+        let animationInterval;
+        let N = 8; // Tamaño inicial
+        
+ 
+        // Genera el tablero
+        function createBoard(size) {
+            const container = document.getElementById('boardContainer');
+            container.innerHTML = ''; // Limpiar
+            container.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+            N = size; // Actualizar el tamaño global
+            
+            for (let i = 0; i < size; i++) {
+                for (let j = 0; j < size; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell ' + ((i + j) % 2 === 0 ? 'white' : 'black');
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    container.appendChild(cell);
+                }
+            }
         }
+        
+        //dibuja el estado de un paso específico en el tablero
+        function drawBoard(board) {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
+                cell.innerHTML = '';
+                cell.classList.remove('action-place', 'action-remove');
 
-        return (
-          <div
-            className="board"
-            style={{ gridTemplateColumns: `repeat(${n}, 40px)` }}
-          >
-            {cells}
-          </div>
-        );
-      }
-
-      function App() {
-        const [n, setN] = useState(8);
-        const [steps, setSteps] = useState([]);
-        const [currentStep, setCurrentStep] = useState(0);
-        const [isPlaying, setIsPlaying] = useState(false);
-
-        const currentBoard =
-          steps.length > 0
-            ? steps[currentStep].board
-            : Array.from({ length: n }, () => Array(n).fill(0));
+                if (board[row][col] === 1) {
+                    //si hay una reina 
+                    cell.innerHTML = '♕';
+                }
+            });
+        }
+        
+   
 
         async function handleSolve() {
-          const value = Number(n);
-          if (value < 4 || value > 12) {
-            alert("N debe estar entre 4 y 12");
-            return;
-          }
-
-          setIsPlaying(false);
-          setCurrentStep(0);
-
-          try {
-            const resp = await fetch("/api/solve", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ n: value }),
-            });
-
-            if (!resp.ok) {
-              const err = await resp.json();
-              alert("Error: " + (err.detail || "No se pudo resolver"));
-              return;
+            N = parseInt(document.getElementById('boardSize').value);
+            
+            if (N < 4 || N > 12) {
+                alert("Por favor, ingresa un tamaño N entre 4 y 12.");
+                return;
             }
-
-            const data = await resp.json();
-            setSteps(data.steps || []);
-            setCurrentStep(0);
-          } catch (e) {
-            console.error(e);
-            alert("Error al conectar con el backend");
-          }
-        }
-
-        function handleNext() {
-          if (!steps.length) return;
-          setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
-        }
-
-        function handlePrev() {
-          if (!steps.length) return;
-          setCurrentStep((prev) => Math.max(prev - 1, 0));
-        }
-
-        // Play automático con delay
-        useEffect(() => {
-          if (!isPlaying || steps.length === 0) return;
-
-          const id = setInterval(() => {
-            setCurrentStep((prev) => {
-              if (prev >= steps.length - 1) {
-                setIsPlaying(false);
-                return prev;
-              }
-              return prev + 1;
-            });
-          }, 500);
-
-          return () => clearInterval(id);
-        }, [isPlaying, steps.length]);
-
-        return (
-          <div>
-            <div className="controls">
-              <label>
-                N:
-                <input
-                  type="number"
-                  min="4"
-                  max="12"
-                  value={n}
-                  onChange={(e) => setN(e.target.value)}
-                />
-              </label>
-              <button onClick={handleSolve}>Resolver</button>
-            </div>
-
-            <div className="step-controls">
-              <button onClick={handlePrev} disabled={currentStep === 0}>
-                Anterior
-              </button>
-              <button
-                onClick={handleNext}
-                disabled={
-                  steps.length === 0 || currentStep >= steps.length - 1
+            
+            clearInterval(animationInterval);
+            document.getElementById('solveButton').disabled = true;
+            document.getElementById('statusMessage').textContent = 'Calculando...';
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ N: N })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert('Error en la API: ' + data.error);
+                } else if (data.message) {
+                    document.getElementById('statusMessage').textContent = data.message;
+                    drawBoard(data.steps[data.steps.length - 1]?.board || []);
+                } else {
+                    animationSteps = data.steps;
+                    currentStepIndex = 0;
+                    document.getElementById('statusMessage').textContent = 'Animando solución...';
+                    
+                    //inicializar el tablero
+                    createBoard(N); 
+                    
+                    //inicar la animacion
+                    startAutomaticAnimation(animationSteps); 
                 }
-              >
-                Siguiente
-              </button>
-              <button
-                onClick={() => setIsPlaying((p) => !p)}
-                disabled={steps.length === 0}
-              >
-                {isPlaying ? "Pausar" : "Play automático"}
-              </button>
-              <span className="step-info">
-                Paso {steps.length === 0 ? 0 : currentStep + 1} / {steps.length}
-              </span>
-            </div>
+            } catch (error) {
+                console.error("Error al conectar con el backend:", error);
+                document.getElementById('statusMessage').textContent = 'Error de conexión con la API.';
+            } finally {
+                document.getElementById('solveButton').disabled = false;
+            }
+        }
+        
+        function startAutomaticAnimation(steps) {
+            clearInterval(animationInterval); //no hat animacion previa
+            
+            //control manual
+            document.getElementById('nextStepButton').disabled = false;
+            
+            executeStep(steps[currentStepIndex]);
+            document.getElementById('statusMessage').textContent = `Paso ${currentStepIndex + 1} de ${steps.length}`;
+            
+        }
+        
+        function nextStep() {
+            if (currentStepIndex < animationSteps.length) {
+                executeStep(animationSteps[currentStepIndex]);
+                currentStepIndex++;
+                document.getElementById('statusMessage').textContent = `Paso ${currentStepIndex} de ${animationSteps.length}`;
+                
+                if (currentStepIndex === animationSteps.length) {
+                    document.getElementById('statusMessage').textContent = '¡Solución Finalizada!';
+                    document.getElementById('nextStepButton').disabled = true;
+                }
+            }
+        }
 
-            <ChessBoard board={currentBoard} />
-          </div>
-        );
-      }
+        // Ejecuta un paso específico, actualizando el tablero y los mensajes
+        function executeStep(step) {
+            const { board, row, col, action } = step;
+            
+            drawBoard(board);
+            document.getElementById('currentAction').textContent = `${action} en (${row}, ${col})`;
+            
+            // Resaltar la celda donde ocurrió la acción
+            const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+            if (cell) {
+                cell.classList.add(`action-${action.toLowerCase()}`);
+            }
+        }
+        
+        // Reiniciar la interfaz
+        function resetBoard() {
+            const newN = parseInt(document.getElementById('boardSize').value);
+            createBoard(newN);
+            clearInterval(animationInterval);
+            animationSteps = [];
+            currentStepIndex = 0;
+            document.getElementById('statusMessage').textContent = 'Esperando...';
+            document.getElementById('currentAction').textContent = 'N/A';
+            document.getElementById('nextStepButton').disabled = true;
+        }
 
-      const root = ReactDOM.createRoot(document.getElementById("root"));
-      root.render(<App />);
+        // Inicializar el tablero al cargar la página
+        window.onload = () => createBoard(N);
     </script>
-  </body>
+
+</body>
 </html>
