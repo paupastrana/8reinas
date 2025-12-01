@@ -1,35 +1,36 @@
-# api/solve.py
-
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List, Optional
+from fastapi.middleware.cors import CORSMiddleware
 
-# --- Inicialización de FastAPI ---
 app = FastAPI()
 
-# --- Modelos de Datos (para la comunicación con el Frontend) ---
+origins = [
+    "*" 
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],  # Permitir todos los métodos HTTP
+    allow_headers=["*"],
+)
 
 class SolveRequest(BaseModel):
-    # N es el tamaño del tablero, lo que antes era el '8' fijo.
     N: int 
 
-# Una instantánea del estado del tablero y la acción tomada.
-class Step(BaseModel):
-    board: List[List[int]] # El estado actual
-    row: int               # Fila donde se hizo la acción
-    col: int               # Columna donde se hizo la acción
-    action: str            # 'Place' (colocar) o 'Remove' (quitar/backtrack)
 
-# Lista global para almacenar todos los pasos del algoritmo
-# Se reiniciará en cada llamada al endpoint.
+class Step(BaseModel):
+    board: List[List[int]] 
+    row: int               # fila
+    col: int               # columan
+    action: str            # place or remove
+
+
 algorithm_steps: List[dict] = [] 
 
-# --- Funciones de Validación (Adaptadas para un tamaño N genérico) ---
 
-# Tus funciones 'valido' y 'diagonal_libre2' no las usaremos en esta versión
-# de N-Reinas, pero las mantengo adaptadas para que no rompan la estructura.
-# La función 'valido' combinaba validación de fila, columna y diagonal.
-# Para N-Reinas, solo necesitamos validar si la posición es segura.
 
 def diagonal_libre(tablero, fila, col, N):
     
@@ -49,8 +50,7 @@ def diagonal_libre(tablero, fila, col, N):
         i -= 1
         j += 1
     
-    # Las diagonales abajo no necesitan revisarse porque siempre colocamos
-    # la reina en la fila actual y solo revisamos las filas anteriores (0 a fila-1).
+
     
     return True
 
@@ -72,14 +72,14 @@ def valido(tablero, x, y, N):
 def solucion_8reinas(tablero, fila, N):
     global algorithm_steps
     
-    # CASO BASE: Todas las reinas colocadas 
+    #todas las reinas colocadas 
     if fila == N:
         return True
 
     for columna in range(N):
         if valido(tablero, fila, columna, N):
             
-            # 1. PRUEBA: Colocar la reina
+            #colocar reina
             tablero[fila][columna] = 1
             
             #registrar paso de colocar reina

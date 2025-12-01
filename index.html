@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>N-Reinas: Solucionador Visual de Backtracking</title>
+    <title>Juego N-Reinas</title>
     <link rel="stylesheet" href="principal.css">
 </head>
 <body>
 
     <header>
-        <h1>👑 Solucionador Visual de N-Reinas 👑</h1>
-        <p>Algoritmo de Backtracking paso a paso.</p>
+        <h1> N-Reinas </h1>
     </header>
 
     <div class="controls-panel">
-        <label for="boardSize">Tamaño del Tablero (N):</label>
+        <label for="boardSize">Tamaño del Tablero (4-8):</label>
         <input type="number" id="boardSize" value="8" min="4" max="12" onchange="resetBoard()">
         <button id="solveButton" onclick="handleSolve()">Resolver</button>
         <button id="nextStepButton" onclick="nextStep()" disabled>Siguiente Paso</button>
@@ -22,15 +21,12 @@
 
     <div class="status-panel">
         <p>Estado: <span id="statusMessage">Esperando...</span></p>
-        <p>Acción Actual: <span id="currentAction">N/A</span></p>
     </div>
 
     <div id="boardContainer" class="board-container">
         </div>
 
-    <footer>
-        <p>Nota: N restringido entre 4 y 12 para una buena visualización.</p>
-    </footer>
+   
 
     <script>
         const API_URL = "http://127.0.0.1:8000/api/solve"; 
@@ -150,7 +146,7 @@
             const { board, row, col, action } = step;
             
             drawBoard(board);
-            document.getElementById('currentAction').textContent = `${action} en (${row}, ${col})`;
+            // document.getElementById('currentAction').textContent = `${action} en (${row}, ${col})`;
             
             // Resaltar la celda donde ocurrió la acción
             const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
@@ -167,7 +163,7 @@
             animationSteps = [];
             currentStepIndex = 0;
             document.getElementById('statusMessage').textContent = 'Esperando...';
-            document.getElementById('currentAction').textContent = 'N/A';
+            // document.getElementById('currentAction').textContent = 'N/A';
             document.getElementById('nextStepButton').disabled = true;
         }
 
