@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Solucionador Visual de N-Reinas</title>
+    <link rel="stylesheet" href="principal.css" />
+
+    <!-- React 18 desde CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <!-- Babel para poder usar JSX sin build -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body>
+    <h1>Solucionador Visual de N-Reinas (Backtracking)</h1>
+
+    <div id="root"></div>
+
+    <!-- Aquí va toda tu app React -->
+    <script type="text/babel">
+      const { useState, useEffect } = React;
+
+      function ChessBoard({ board }) {
+        const n = board.length;
+        const cells = [];
+
+        for (let i = 0; i < n; i++) {
+          for (let j = 0; j < n; j++) {
+            const isWhite = (i + j) % 2 === 0;
+            const classes = "cell " + (isWhite ? "white" : "black");
+            cells.push(
+              <div key={i + "-" + j} className={classes}>
+                {board[i][j] === 1 ? "♛" : ""}
+              </div>
+            );
+          }
+        }
+
+        return (
+          <div
+            className="board"
+            style={{ gridTemplateColumns: `repeat(${n}, 40px)` }}
+          >
+            {cells}
+          </div>
+        );
+      }
+
+      function App() {
+        const [n, setN] = useState(8);
+        const [steps, setSteps] = useState([]);
+        const [currentStep, setCurrentStep] = useState(0);
+        const [isPlaying, setIsPlaying] = useState(false);
+
+        const currentBoard =
+          steps.length > 0
+            ? steps[currentStep].board
+            : Array.from({ length: n }, () => Array(n).fill(0));
+
+        async function handleSolve() {
+          const value = Number(n);
+          if (value < 4 || value > 12) {
+            alert("N debe estar entre 4 y 12");
+            return;
+          }
+
+          setIsPlaying(false);
+          setCurrentStep(0);
+
+          try {
+            const resp = await fetch("/api/solve", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ n: value }),
+            });
+
+            if (!resp.ok) {
+              const err = await resp.json();
+              alert("Error: " + (err.detail || "No se pudo resolver"));
+              return;
+            }
+
+            const data = await resp.json();
+            setSteps(data.steps || []);
+            setCurrentStep(0);
+          } catch (e) {
+            console.error(e);
+            alert("Error al conectar con el backend");
+          }
+        }
+
+        function handleNext() {
+          if (!steps.length) return;
+          setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+        }
+
+        function handlePrev() {
+          if (!steps.length) return;
+          setCurrentStep((prev) => Math.max(prev - 1, 0));
+        }
+
+        // Play automático con delay
+        useEffect(() => {
+          if (!isPlaying || steps.length === 0) return;
+
+          const id = setInterval(() => {
+            setCurrentStep((prev) => {
+              if (prev >= steps.length - 1) {
+                setIsPlaying(false);
+                return prev;
+              }
+              return prev + 1;
+            });
+          }, 500); // 500 ms por paso
+
+          return () => clearInterval(id);
+        }, [isPlaying, steps.length]);
+
+        return (
+          <div>
+            <div className="controls">
+              <label>
+                N:
+                <input
+                  type="number"
+                  min="4"
+                  max="12"
+                  value={n}
+                  onChange={(e) => setN(e.target.value)}
+                />
+              </label>
+              <button onClick={handleSolve}>Resolver</button>
+            </div>
+
+            <div className="step-controls">
+              <button onClick={handlePrev} disabled={currentStep === 0}>
+                Anterior
+              </button>
+              <button
+                onClick={handleNext}
+                disabled={
+                  steps.length === 0 || currentStep >= steps.length - 1
+                }
+              >
+                Siguiente
+              </button>
+              <button
+                onClick={() => setIsPlaying((p) => !p)}
+                disabled={steps.length === 0}
+              >
+                {isPlaying ? "Pausar" : "Play automático"}
+              </button>
+              <span className="step-info">
+                Paso {steps.length === 0 ? 0 : currentStep + 1} / {steps.length}
+              </span>
+            </div>
+
+            <ChessBoard board={currentBoard} />
+          </div>
+        );
+      }
+
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      root.render(<App />);
+    </script>
+  </body>
+</html>
